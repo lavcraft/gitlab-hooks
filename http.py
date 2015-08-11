@@ -37,35 +37,45 @@ class RequestHandler(BaseHTTPRequestHandler):
         content = self.rfile.read(length)
 
         a = json.loads(content)
+        # init push event arguments
+        before = a['before']
+        after = a['after']
+        ref= a['ref']
+        ssh_url = a['repository']['git_ssh_url']
         project_id = a['project_id']
+
+        # skip automatically rebuilded project
+        if ref.startswith('refs/heads/build'):
+           self.send_response(200)
+           return
+
+        # handle project dependencies and init some action
+        print 'handle project #{}[{}:{}] with before:{} and after:{}'.format(project_id,ssh_url,ref,before,after)
+
         project = self.gl.project(project_id)
-        deps = self.gl.depsBlobs()
-        print '='*100
-        for i in deps:
+        deps = self.gl.depsBlobs() # deps from registry/order specific project who contain projects and dependencoes matches
+
+        for i in deps: # find current project dependencies and set them
            if i.name == project.name and i.group == project.group:
               project.deps = i.deps
 
-        ciprojects = self.glc.projects()
+        ciprojects = self.glc.projects() # get all GitLab CI projects
 
-        for i in ciprojects:
+        for i in ciprojects: # start find specific project in gitlab ci by name and group. Not optimal
            for v in project.deps:
               if i.name == v.name and i.group == v.group:
-                 project_dir = '/git/'+str(i.id)
+                 project_dir = '/git/'+str(i.id)+'-'+after
                  if os.path.exists(project_dir):
                     print 'repository exist. pull...'
                     call(['git','fetch','origin'],cwd=project_dir)
                  else:
                     print 'clone repository...'
-                    call(['git','clone',ssh_url,'/git/'+str(i.id)])
+                    call(['git','clone',ssh_url,project_dir])
 
-                 print 'customize build project'
+                 print 'customize build project...'
                  #call(['git','checkout',after],cwd=project_dir)
                  build_branch='build/number-'+strftime("%Y-%m-%d_%H_%M_%S", gmtime())
                  call(['git','checkout','-b',build_branch],cwd=project_dir)
-
-                 if ref.startswith('refs/heads/build'):
-                    self.send_response(200)
-                    return
 
                  if os.path.exists(project_dir+'/manage.dependency'):
                     call(['./manage.dependency'],cwd=project_dir)
@@ -75,41 +85,14 @@ class RequestHandler(BaseHTTPRequestHandler):
                     print 'push branch {} to remote'.format(build_branch)
                     call(['git','push','origin',build_branch],cwd=project_dir)
 
+                 # init phantom commit
                  #commits = self.gl.commits(i.id)
                  #last_commit = commits[0]['id']
                  #prev_commit = commits[1]['id']
                  #print 'rebuild project {} last commit: {}'.format(i,last_commit)
                  #self.glc.commit(ref='refs/heads/master',project=i,before=prev_commit,after=last_commit).json()
 
-
-        before = a['before']
-        after = a['after']
-        ref= a['ref']
-        ssh_url = a['repository']['git_ssh_url']
-        print 'handle project #{}[{}:{}] with before:{} and after:{}'.format(project_id,ssh_url,ref,before,after)
         request_stop_log()
-
-        if ref.startswith('refs/heads/build'):
-           self.send_response(200)
-           return
-
-        project_dir = '/git/'+str(project_id)
-        if os.path.exists(project_dir):
-           print 'repository exist. pull...'
-           call(['git','fetch','origin'],cwd=project_dir)
-        else:
-           print 'clone repository...'
-           call(['git','clone',ssh_url,'/git/'+str(project_id)])
-
-        print 'customize build project'
-        call(['git','checkout',after],cwd=project_dir)
-        build_branch='build/number-'+strftime("%Y-%m-%d_%H_%M_%S", gmtime())
-        call(['git','checkout','-b',build_branch],cwd=project_dir)
-
-        if os.path.exists(project_dir+'/manage.dependency'):
-           call(['./manage.dependency'],cwd=project_dir)
-           print 'push branch {} to remote'.format(build_branch)
-           call(['git','push','origin',build_branch],cwd=project_dir)
 
         self.send_response(200)
 
