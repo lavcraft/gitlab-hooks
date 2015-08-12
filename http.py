@@ -64,13 +64,13 @@ class RequestHandler(BaseHTTPRequestHandler):
         for i in ciprojects: # start find specific project in gitlab ci by name and group. Not optimal
            for v in project.deps:
               if i.name == v.name and i.group == v.group:
-                 project_dir = '/git/'+str(v.id)+'-'+after
+                 project_dir = '/git/'+str(i.id)+'-'+after
                  if os.path.exists(project_dir):
                     print 'repository exist. pull...'
                     call(['git','fetch','origin'],cwd=project_dir)
                  else:
                     print 'clone repository...'
-                    call(['git','clone',ssh_url,project_dir])
+                    call(['git','clone',i.ssh_url,project_dir])
 
                  print 'customize build project...'
                  #call(['git','checkout',after],cwd=project_dir)
