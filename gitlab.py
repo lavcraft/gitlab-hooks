@@ -4,26 +4,27 @@
 import requests, json
 
 class Project:
-   def __init__(self,group=None,name=None,id=None,ci_id=None,deps=[],token=None):
+   def __init__(self,group=None,name=None,id=None,ci_id=None,deps=[],token=None,ssh_url=None):
       self.id = id
       self.ci_id = ci_id
       self.group = group
       self.name = name
       self.deps = deps
       self.token = token
+      self.ssh_url = ssh_url
 
    def __str__(self):
       d=[]
       for i in self.deps:
          d.append(str(i))
       return '{}:{},[deps={}],id={},ci_id={}'.format(self.group,self.name,','.join(d),self.id,self.ci_id)
-   
+
    def __repr__(self):
       d=[]
       for i in self.deps:
          d.append(str(i))
       return '{}:{},[deps={}],id={},ci_id={}'.format(self.group,self.name,','.join(d),self.id,self.ci_id)
-   
+
 class GitLab:
    def __init__(self,url,token,registry_id,deps_sha):
       self.url=url
@@ -49,7 +50,7 @@ class GitLab:
    def lastCommit(self,project_id):
       r = self.get('/projects/'+str(project_id)+'/repository/commits')
       return r.json()[0]
-   
+
    def commits(self,project_id):
       r = self.get('/projects/'+str(project_id)+'/repository/commits')
       return r.json()
@@ -57,7 +58,7 @@ class GitLab:
    def rawBlobs(self,project_id,sha):
       r = self.get('/projects/'+str(project_id)+'/repository/raw_blobs/'+sha)
       return r
-   
+
    def depsBlobs(self):
       r = self.get('/projects/'+str(self.registry_id)+'/repository/raw_blobs/'+self.deps_sha)
       return [Project(p['name'].split(":")[0],p['name'].split(":")[1],deps=[Project(d.split(":")[0],d.split(":")[1]) for d in p['deps']]) for p in r.json()['projects']]
@@ -85,7 +86,7 @@ def test():
 
    printh('deps get test...')
    print gl.depsBlobs()
-   
+
    printh('get last commit...')
    print gl.lastCommit(7)
 

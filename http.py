@@ -64,7 +64,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         for i in ciprojects: # start find specific project in gitlab ci by name and group. Not optimal
            for v in project.deps:
               if i.name == v.name and i.group == v.group:
-                 project_dir = '/git/'+str(i.id)+'-'+after
+                 project_dir = '/git/'+str(v.id)+'-'+after
                  if os.path.exists(project_dir):
                     print 'repository exist. pull...'
                     call(['git','fetch','origin'],cwd=project_dir)

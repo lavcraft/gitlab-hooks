@@ -29,7 +29,7 @@ class GitLabCi:
          arr = ciname.split('/')
          name = arr[1].strip()
          group = arr[0].strip()
-         projects.append(Project(name=name,group=group,token=p['token'],id=p['gitlab_id'],ci_id=p['id']))
+         projects.append(Project(name=name,group=group,token=p['token'],id=p['gitlab_id'],ci_id=p['id'],ssh_url=p['ssh_url_to_repo']))
 
       return projects
 
@@ -40,13 +40,13 @@ class GitLabCi:
       arr = ciname.split('/')
       name = arr[1].strip()
       group = arr[0].strip()
-      return Project(name=name,group=group,token=p['token'],id=p['gitlab_id'],ci_id=p['id'])
+      return Project(name=name,group=group,token=p['token'],id=p['gitlab_id'],ci_id=p['id'],ssh_url=p['ssh_url_to_repo'])
 
    def commit(self,ref,after,project,before=None):
       r = self.post(urlPart='/commits',data={'data':{'ref':ref,'after':after,'before':before}},params={'project_id':project.ci_id,'project_token':project.token})
       return r
-      
-   
+
+
 gl = GitLabCi(url='http://ci.agat/api/v1',token='MNJwAaG9x1P6VdZ7Fv_k')
 
 def printh(h):
