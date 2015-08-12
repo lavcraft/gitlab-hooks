@@ -68,6 +68,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                  if os.path.exists(project_dir):
                     print 'repository exist. pull...'
                     call(['git','fetch','origin'],cwd=project_dir)
+                    call(['git','checkout','master'],cwd=project_dir)
                  else:
                     print 'clone repository...'
                     call(['git','clone',i.ssh_url,project_dir])
