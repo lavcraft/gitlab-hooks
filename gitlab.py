@@ -60,7 +60,7 @@ class GitLab:
       return r
 
    def depsBlobs(self):
-      self.updateRegistrySha(self)
+      self.updateRegistrySha()
       r = self.get('/projects/'+str(self.registry_id)+'/repository/raw_blobs/'+self.deps_sha)
       return [Project(p['name'].split(":")[0],p['name'].split(":")[1],deps=[Project(d.split(":")[0],d.split(":")[1]) for d in p['deps']]) for p in r.json()['projects']]
 
