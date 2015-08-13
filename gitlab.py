@@ -60,8 +60,16 @@ class GitLab:
       return r
 
    def depsBlobs(self):
+      self.updateRegistrySha(self)
       r = self.get('/projects/'+str(self.registry_id)+'/repository/raw_blobs/'+self.deps_sha)
       return [Project(p['name'].split(":")[0],p['name'].split(":")[1],deps=[Project(d.split(":")[0],d.split(":")[1]) for d in p['deps']]) for p in r.json()['projects']]
+
+   def updateRegistrySha(self):
+      r = self.get('/projects/'+str(self.registry_id)+'/repository/tree')
+      refs = r.json()
+      for i in refs:
+         if i['name'] == 'dependencies':
+            self.deps_sha=i['id']
 
 gitlab_url= 'http://git.agat/api/v3'
 
